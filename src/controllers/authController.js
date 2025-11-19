@@ -3,6 +3,7 @@ const Org = require('../models/Org');
 const KYC = require('../models/KYC');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { sendOTPEmail } = require('../utils/MailSetup');
 
 exports.register = async (req, res) => {
   try {
@@ -57,7 +58,9 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       phone: phone || '',
       role,
-      profilePic: profilePic || '', // default empty string
+      profilePic: profilePic || '',
+      isVerified: false,
+      isBlocked: false,
     });
 
     let organization = null;
@@ -79,8 +82,15 @@ exports.register = async (req, res) => {
       });
     }
 
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    user.OTP = await bcrypt.hash(otp.toString(), 10);
+    user.otpTime = Date.now();
+    await user.save();
+
+    await sendOTPEmail(user.email, otp);
+
     res.status(201).json({
-      message: 'Registration successful',
+      message: 'OTP sent successfully to your email.',
       user,
       organization, // null if role is not 'org'
       kyc, // null if role is not 'org'
@@ -90,6 +100,47 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+exports.verifyUser = async function handleOTPVerify(req, res) {
+  const { email, submittedOTP } = req.body;
+
+  const userData = await User.findOne({ email: email });
+  const expiryTime = userData.otpTime.getTime() + 5 * 60 * 1000;
+  const now = Date.now();
+
+  if (!userData) {
+      return res.status(400).json({ message: 'Verification failed. No user found!' });
+  }
+
+  if (now > expiryTime) {
+    return res.status(401).json({ message: 'OTP has expired. Please request a new code.' });
+  }
+
+  const resultCompare = await bcrypt.compare(submittedOTP.toString(), userData.OTP);
+  if (resultCompare) {
+    userData.isVerified = true;
+    await userData.save();
+    return res.status(200).json({ message: 'Verification successful!' });
+  }
+  else{
+    return res.status(401).json({ message: 'Invalid OTP. Please check the code and try again.' });
+  }
+
+}
+
+exports.resendOTP = async function resendOTPUser(req, res) {
+  const { email } = req.body;
+
+  const userData = await User.findOne({ email: email });
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  userData.OTP = await bcrypt.hash(otp.toString(), 10);
+  userData.otpTime = Date.now();
+  await userData.save();
+
+  await sendOTPEmail(userData.email, otp);
+
+  res.status(200).json({ message: 'OTP sent successfully to your email.'});
+}
 
 exports.login = async (req, res) => {
   try {
