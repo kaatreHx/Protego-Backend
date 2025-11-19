@@ -34,7 +34,24 @@ const userSchema = new mongoose.Schema(
     profilePic: {
       type: String, 
       default: '',  
-    }
+    },
+    OTP: {
+      type: String,
+      default: '',
+      required: false,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    otpTime: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
