@@ -1,7 +1,13 @@
 const mongoose = require('mongoose');
+const Org = require('./Org');
 
-const userSchema = new mongoose.Schema(
+const staffSchema = new mongoose.Schema(
   {
+    orgId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Org',
+      required: true,
+    },
     name: {
       type: String,
       required: true,
@@ -23,9 +29,14 @@ const userSchema = new mongoose.Schema(
     profilePic: {
       type: String, 
       default: '',  
-    }
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+    },
   },
   { timestamps: true } // automatically adds createdAt and updatedAt
 );
 
-module.exports = mongoose.model('Staff', userSchema);
+module.exports = mongoose.model('Staff', staffSchema);
