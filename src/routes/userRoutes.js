@@ -11,4 +11,8 @@ router.put('/:id', authMiddleware, userController.updateUser);
 
 router.delete('/:id', authMiddleware, userController.deleteUser);
 
+router.put('/:id/block', authMiddleware, userController.blockUser);
+
+router.put('/:id/unblock', authMiddleware, userController.unblockUser);
+
 module.exports = router;
