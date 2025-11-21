@@ -7,6 +7,11 @@ const serviceSchema = new mongoose.Schema(
       ref: 'Org',
       required: true,
     },
+    types: {
+      type: String,
+      enum: ['service', 'product'],
+      default: 'service',
+    },
     name: {
       type: String,
       required: true,
