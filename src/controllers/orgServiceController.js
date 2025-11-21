@@ -1,10 +1,10 @@
 const Service = require('../models/Service');
 const Org = require('../models/Org');
 
-// Create a new service
+// Create a new service or product
 exports.create = async (req, res) => {
   try {
-    const { name, description, price } = req.body;
+    const { name, description, price, status, types } = req.body;
 
     // Find organization of logged-in user
     const org = await Org.findOne({ user: req.user._id });
@@ -15,7 +15,8 @@ exports.create = async (req, res) => {
       name,
       description,
       price,
-      status: 'active',
+      status: status || 'active',
+      types: types || 'service',
     });
 
     const savedService = await service.save();
@@ -29,7 +30,7 @@ exports.create = async (req, res) => {
   }
 };
 
-// Get all services for the logged-in organization
+// Get all services/products for the logged-in organization
 exports.list = async (req, res) => {
   try {
     const org = await Org.findOne({ user: req.user._id });
@@ -42,7 +43,7 @@ exports.list = async (req, res) => {
   }
 };
 
-// Get a single service by ID
+// Get a single service/product by ID
 exports.get = async (req, res) => {
   try {
     const service = await Service.findById(req.params.id).populate('organizationId');
@@ -50,7 +51,7 @@ exports.get = async (req, res) => {
       return res.status(404).json({ message: 'Service not found' });
     }
 
-    // Optional: check if logged-in user owns this service
+    // Check ownership
     const org = await Org.findOne({ user: req.user._id });
     if (!org || service.organizationId._id.toString() !== org._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to view this service' });
@@ -62,10 +63,10 @@ exports.get = async (req, res) => {
   }
 };
 
-// Update a service by ID
+// Update a service/product by ID
 exports.update = async (req, res) => {
   try {
-    const { name, description, price, status } = req.body;
+    const { name, description, price, status, types } = req.body;
 
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ message: 'Service not found' });
@@ -80,6 +81,7 @@ exports.update = async (req, res) => {
     service.description = description || service.description;
     service.price = price !== undefined ? price : service.price;
     service.status = status || service.status;
+    service.types = types || service.types;
 
     const updatedService = await service.save();
     res.status(200).json(updatedService);
@@ -91,7 +93,7 @@ exports.update = async (req, res) => {
   }
 };
 
-// Delete a service by ID
+// Delete a service/product by ID
 exports.remove = async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
