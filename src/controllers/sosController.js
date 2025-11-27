@@ -20,17 +20,14 @@ exports.acceptSOS = async (req, res) => {
   const { sosId } = req.params;
 
   const sos = await SOS.findById(sosId);
-
   if (!sos) return res.status(404).json({ message: "SOS not found" });
-  if (sos.status === "accepted") {
-    return res.status(400).json({ message: "Already accepted" });
-  }
+  if (sos.status === "accepted") return res.status(400).json({ message: "Already accepted" });
 
   sos.status = "accepted";
   sos.acceptedBy = orgId;
   await sos.save();
 
-  io.emit("sos_removed", sosId);
+  io.emit("sos_removed", sosId); // remove from other org dashboards
 
   res.json({ message: "SOS accepted", sos });
 };
@@ -39,11 +36,16 @@ exports.updateLocation = async (req, res) => {
   const { lat, lng } = req.body;
   const { sosId } = req.params;
 
-  await SOS.findByIdAndUpdate(sosId, {
-    location: { lat, lng },
-  });
+  const sos = await SOS.findById(sosId);
+  if (!sos) return res.status(404).json({ message: "SOS not found" });
+  if (sos.status !== "accepted") {
+    return res.status(400).json({ message: "SOS not active or completed" });
+  }
 
-  io.emit(`location_update_${sosId}`, { lat, lng });
+  sos.location = { lat, lng };
+  await sos.save();
+
+  io.emit(`location_update_${sosId}`, sos.location);
 
   res.json({ message: "Location updated" });
 };
@@ -81,4 +83,21 @@ exports.getSOSForOrg = async (req, res) => {
           message: "Server error while fetching SOS"
       });
   }
+};
+
+exports.completeSOS = async (req, res) => {
+  const { sosId } = req.params;
+  const orgId = req.user.id;
+
+  const sos = await SOS.findById(sosId);
+  if (!sos) return res.status(404).json({ message: "SOS not found" });
+  if (sos.acceptedBy.toString() !== orgId) return res.status(403).json({ message: "Not authorized" });
+
+  sos.status = "completed";
+  sos.completedAt = new Date();
+  await sos.save();
+
+  io.emit("sos_completed", sosId); // notify frontend
+
+  res.json({ message: "SOS completed", sos });
 };
