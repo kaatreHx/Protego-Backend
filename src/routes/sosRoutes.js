@@ -13,6 +13,6 @@ router.post("/accept/:sosId", auth, controller.acceptSOS);
 router.patch("/update-location/:sosId", auth, controller.updateLocation);
 
 // Org gets pending SOS
-router.get("/pending", auth, controller.getPendingSOS);
+router.get("/pending", auth, controller.getSOSForOrg);
 
 module.exports = router;
