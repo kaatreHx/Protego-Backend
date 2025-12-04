@@ -1,5 +1,5 @@
 const SOS = require("../models/SOS");
-const io = require("../sockets/sosSocket");
+const io = require("../sockets/sosSockets");
 
 exports.createSOS = async (req, res) => {
   const { lat, lng } = req.body;
