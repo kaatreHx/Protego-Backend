@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/sosController");
-const auth = require("../middleware/auth");
+const auth = require("../middleware/authMiddleware");
 
 // User sends SOS
 router.post("/create", auth, controller.createSOS);
