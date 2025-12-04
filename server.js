@@ -23,7 +23,7 @@ const io = require("socket.io")(server, {
 });
 
 // Initialize socket manager
-const sosSocket = require("./src/sockets/sosSocket");
+const sosSocket = require("./src/sockets/sosSockets");
 sosSocket.init(io);
 
 app.use(cors());
